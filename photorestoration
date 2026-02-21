@@ -1,0 +1,67 @@
+# Old Photo Restoration using Python + OpenCV
+
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+# -------------------------
+# Step 1: Read the Image
+# -------------------------
+img = cv2.imread('old_photo.jpeg')  # Make sure this file is in the same folder
+
+if img is None:
+    print("Error: Image not found. Check the file name/path!")
+    exit()
+
+# -------------------------
+# Step 2: Convert to Grayscale
+# -------------------------
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+# -------------------------
+# Step 3: Denoise the Image
+# -------------------------
+denoised = cv2.fastNlMeansDenoising(gray, None, h=10, templateWindowSize=7, searchWindowSize=21)
+
+# -------------------------
+# Step 4: Scratch / Spot Removal (Inpainting)
+# -------------------------
+# Create mask for damaged areas (example: thresholding light spots)
+mask = cv2.threshold(denoised, 200, 255, cv2.THRESH_BINARY)[1]
+restored = cv2.inpaint(denoised, mask, 3, cv2.INPAINT_TELEA)
+
+# -------------------------
+# Step 5: Contrast Enhancement
+# -------------------------
+enhanced = cv2.convertScaleAbs(restored, alpha=1.3, beta=0)
+
+# -------------------------
+# Step 6: Sharpening
+# -------------------------
+kernel = np.array([[0, -1, 0],
+                   [-1, 5, -1],
+                   [0, -1, 0]])
+sharpened = cv2.filter2D(enhanced, -1, kernel)
+
+# -------------------------
+# Step 7: Display Images using Matplotlib
+# -------------------------
+plt.figure(figsize=(12,6))
+
+plt.subplot(1,2,1)
+plt.imshow(gray, cmap='gray')
+plt.title('Original Image')
+plt.axis('off')
+
+plt.subplot(1,2,2)
+plt.imshow(sharpened, cmap='gray')
+plt.title('Restored Image')
+plt.axis('off')
+
+plt.show()
+
+# -------------------------
+# Step 8: Save the Restored Image
+# -------------------------
+cv2.imwrite('restored_photo.png', sharpened)
+print("Restored image saved as 'restored_photo.png'")
